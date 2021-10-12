@@ -1,0 +1,59 @@
+HELM ===> helm -h  [help]
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ubuntu@ip-172-31-7-129:~$ helm create chatapp
+Creating chatapp
+ubuntu@ip-172-31-7-129:~/chatapp$ ls -lrt
+total 16
+-rw-r--r-- 1 ubuntu ubuntu 1874 Oct  9 07:06 values.yaml
+drwxr-xr-x 3 ubuntu ubuntu 4096 Oct  9 07:06 templates
+drwxr-xr-x 2 ubuntu ubuntu 4096 Oct  9 07:06 charts
+-rw-r--r-- 1 ubuntu ubuntu 1143 Oct  9 07:06 Chart.yaml
+
+ubuntu@ip-172-31-7-129:~/chatapp/templates$ ls -lrt
+total 32
+drwxr-xr-x 2 ubuntu ubuntu 4096 Oct  9 07:06 tests
+-rw-r--r-- 1 ubuntu ubuntu  320 Oct  9 07:06 serviceaccount.yaml
+-rw-r--r-- 1 ubuntu ubuntu  361 Oct  9 07:06 service.yaml
+-rw-r--r-- 1 ubuntu ubuntu 2079 Oct  9 07:06 ingress.yaml
+-rw-r--r-- 1 ubuntu ubuntu  916 Oct  9 07:06 hpa.yaml
+-rw-r--r-- 1 ubuntu ubuntu 1836 Oct  9 07:06 deployment.yaml
+-rw-r--r-- 1 ubuntu ubuntu 1782 Oct  9 07:06 _helpers.tpl
+-rw-r--r-- 1 ubuntu ubuntu 1747 Oct  9 07:06 NOTES.txt
+
+ubuntu@ip-172-31-7-129:~$ tree chatapp/
+chatapp/
+├── Chart.yaml
+├── charts
+├── templates
+│   ├── NOTES.txt
+│   ├── _helpers.tpl
+│   ├── deployment.yaml
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   ├── service.yaml
+│   ├── serviceaccount.yaml
+│   └── tests
+│       └── test-connection.yaml
+└── values.yaml
+
+
+To check syntax
+ubuntu@ip-172-31-7-129:~$ helm lint ./chatapp/
+==> Linting ./chatapp/
+[INFO] Chart.yaml: icon is recommended
+
+ubuntu@ip-172-31-7-129:~$ helm install --dry-run --debug ./mychart/ --generate-name
+ubuntu@ip-172-31-7-129:~$ helm install nginx ./nginx/
+ubuntu@ip-172-31-7-129:~$ helm list
+ubuntu@ip-172-31-7-129:~$ kubectl get all
+ubuntu@ip-172-31-7-129:~$ helm template mysql
+ubuntu@ip-172-31-7-129:~$ helm install backend backend
+ubuntu@ip-172-31-7-129:~$ helm list -a
+ubuntu@ip-172-31-7-129:~$ helm delete backend
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+put your configfile in /nginx/templet/ directory name as configmap.yaml
+ubuntu@ip-172-31-7-129:~$ helm install nginx ./nginx/
+ubuntu@ip-172-31-7-129:~$ helm get manifest nginx
+
+

@@ -1,0 +1,52 @@
+COMMANDS
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[it will create pod and container]
+root@ip-172-31-38-184:~# kubectl create -f firstpod.yml 
+root@ip-172-31-38-184:~# kubectl apply -f firstpod.yml --dry-run=client
+root@ip-172-31-38-184:~# kubectl apply -f firstpod.yml -server--dry-run
+root@ip-172-31-38-184:~# kubectl diff -f firstpod.yml
+
+SEE LIST of nodes ===>  kubectl get nodes
+SEE LIST of pods ===> kubectl get pods
+To see in which pod my container is running ===> kubectl get pods -o wide
+pod information in yaml file ===> kubectl get pods -o ymal
+EXPLAIN pods ===> kubectl explain pods
+explain pods with less command ===> kubectl explain pods | less
+EXPLAIN replicacontroller ===> kubectl explain replicascontroller | less
+DESCRIBE ===>  kubectl describe pod mypod | less
+DELETE resources ===> kubectl delete resourcetype resourcename
+To DELETE PODS ===> kubectl delete pod mypod
+To DELETE ALL PODS ===> kubectl delete pods --all
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+LABELS COMMAND
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+To see the lable ===> kubectl describe pod firstpod | less
+To set the lable ===> kubectl label pod firstpod env=testing
+To change the existing lable ===> kubectl label --overwrite pod firstpod env=prod
+To remove the labels ===> kubectl label pod firstpod env-
+To show labels ===> kubectl get pods --show-labels
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Pods and container
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+kubectl exec -it podname -- bash
+root@ip-172-31-38-184:~# kubectl exec myfirstpod env
+root@ip-172-31-38-184:~# kubectl exec myfirstpod -c firstcontainer env
+root@ip-172-31-38-184:~# kubectl exec myfirstpod -it bash
+root@ip-172-31-38-184:~# kubectl exec myfirstpod -c firstcontainer -it bash
+ubuntu@ip-172-31-38-184:~$ kubectl exec backend-deployment-8444f558cb-gsjv2 -c backend-container -it bash
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SERVICES : TO ACCESS CONTAINER WE HAVE TO EXPOSE PORT | USE SERVICES
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+kubectl apply -f myfirstservice.yml
+1. SERVICE ==> cluster IP (for inside cluster communication)
+root@ip-172-31-38-184:~# kubectl expose pod thirdpod --port=8000(cluster will listen at this port) --target-port=80(8000 redirect to pod port 80) --name myfirstservice
+root@ip-172-31-38-184:~# kubectl get services && kubectl get svc
+2. SERVICE ==> node-port (to access outside the cluster)
+root@ip-172-31-38-184:~# kubectl expose pod thirdpod --type=NodePort --port=8000 --target-port=80 --name myfirstservice1
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONFIGMAP
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+kubectl api-resources | grep configmaps
+kubectl get configmap
+CREATE configmap ===>  kubectl create cm nginxconfig --from-file=configmap.yml
+kubectl create cm cmfiles --from-file=properties/

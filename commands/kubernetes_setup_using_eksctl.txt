@@ -1,0 +1,249 @@
+You can follow same procedure in the official AWS document [Getting started with Amazon EKS – eksctl]
+Pre-requisites:
+	an EC2 Instance
+AWS EKS Setup
+1. Setup kubectl
+	a. Download kubectl version 1.20
+	b. Grant execution permissions to kubectl executable
+	c. Move kubectl onto /usr/local/bin
+	d. Test that your kubectl installation was successful
+	curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl
+	chmod +x ./kubectl
+	sudo mv ./kubectl /usr/local/bin 
+	kubectl version --short --client
+2. Setup eksctl
+	a. Download and extract the latest release
+	b. Move the extracted binary to /usr/local/bin
+	c. Test that your eksclt installation was successful
+	curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+	sudo mv /tmp/eksctl /usr/local/bin
+	eksctl version
+3. Create an IAM Role and attache it to EC2 instance
+Note: create IAM user with programmatic access if your bootstrap system is outside of AWS
+	IAM user should have access to
+	IAM
+	EC2
+	VPC
+	CloudFormation
+	Administrator access
+4. Create your cluster and nodes
+	eksctl create cluster --name cluster-name  \
+	--region region-name \
+	--node-type instance-type \
+	--nodes-min 2 \
+	--nodes-max 2 \ 
+	--zones <AZ-1>,<AZ-2>
+	example:
+	eksctl create cluster --name funddo-cluster \
+	--region ap-south-1 \
+	--node-type t2.small \
+5. To delete the EKS clsuter
+	eksctl delete cluster valaxy --region ap-south-1
+6. Validate your cluster using by creating by checking nodes and by creating a pod
+	kubectl get nodes
+	kubectl run pod tomcat --image=tomcat 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+EKS CLUSTER FORMATION
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+./eksctl create cluster -n central -r ap-south-1 --version 1.19 --managed --nodegroup-name small-pool -t t3a.small -m 1 -M 12 --node-volume-size 20 
+--ssh-access --node-labels pool=small-pool --instance-prefix central --asg-access --external-dns-access --full-ecr-access --kubeconfig /home/<user>/.kube/config
+
+eksctl create cluster \
+--name chatapp \
+--region us-east-2 \
+--version 1.21 \
+--managed \
+--nodegroup-name worker-node \
+--node-type t3a.small \
+--nodes-min 1 \
+--nodes-max 5 \
+--node-volume-size 20 \
+--ssh-access \
+--ssh-public-key eksctl \
+--asg-access \
+--external-dns-access \
+--full-ecr-access \
+--kubeconfig /home/ubuntu/.kube/config
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+REQUIRED
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+nginx-ingress controller
+node autoscalar 
+Load balancer
+templates for your application
+deployment
+service
+ingress
+register for free domain
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Deploy the cluster autoscaler
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1.kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+2.kubectl patch deployment cluster-autoscaler \
+  -n kube-system \
+  -p '{"spec":{"template":{"metadata":{"annotations":{"cluster-autoscaler.kubernetes.io/safe-to-evict": "false"}}}}}'
+3.kubectl -n kube-system edit deployment.apps/cluster-autoscaler
+Edit the cluster-autoscaler container command to replace <YOUR CLUSTER NAME> (including <>) with the name of your cluster, and add the following options.
+--balance-similar-node-groups
+--skip-nodes-with-system-pods=false
+4. Set the Cluster Autoscaler image tag to the version
+ubuntu@ip-172-31-38-184:~$ kubectl set image deployment cluster-autoscaler   -n kube-system   cluster-autoscaler=k8s.gcr.io/autoscaling/cluster-autoscaler:v1.20
+5. To view your cluster logs
+ubuntu@ip-172-31-38-184:~$ kubectl -n kube-system logs -f deployment.apps/cluster-autoscaler
+
+kubectl describe pods backend-deployment-8444f558cb-298vf
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ATTACH INGRESS CONTROLLER
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ubuntu@ip-172-31-38-184:~$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.0.2/deploy/static/provider/aws/deploy.yaml
+
+namespace/ingress-nginx created
+serviceaccount/ingress-nginx created
+configmap/ingress-nginx-controller created
+clusterrole.rbac.authorization.k8s.io/ingress-nginx unchanged
+clusterrolebinding.rbac.authorization.k8s.io/ingress-nginx unchanged
+role.rbac.authorization.k8s.io/ingress-nginx created
+rolebinding.rbac.authorization.k8s.io/ingress-nginx created
+service/ingress-nginx-controller-admission created
+service/ingress-nginx-controller created
+deployment.apps/ingress-nginx-controller created
+ingressclass.networking.k8s.io/nginx unchanged
+validatingwebhookconfiguration.admissionregistration.k8s.io/ingress-nginx-admission configured
+serviceaccount/ingress-nginx-admission created
+clusterrole.rbac.authorization.k8s.io/ingress-nginx-admission unchanged
+clusterrolebinding.rbac.authorization.k8s.io/ingress-nginx-admission unchanged
+role.rbac.authorization.k8s.io/ingress-nginx-admission created
+rolebinding.rbac.authorization.k8s.io/ingress-nginx-admission created
+job.batch/ingress-nginx-admission-create created
+job.batch/ingress-nginx-admission-patch created
+
+ubuntu@ip-172-31-38-184:~$ kubectl get pods -n ingress-nginx
+NAME                                        READY   STATUS      RESTARTS   AGE
+ingress-nginx-admission-create-gbtpq        0/1     Completed   0          3m56s
+ingress-nginx-admission-patch-zp6xl         0/1     Completed   0          3m56s
+ingress-nginx-controller-6b969597bc-xb2rn   1/1     Running     0          3m56s
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+chatapp.ritesh.com
+https://www.freenom.com/en/index.html?lang=en
+https://kubernetes.io/docs/concepts/configuration/configmap/
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+AutoScalar
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ubuntu@ip-172-31-7-129:~$ aws eks describe-cluster --name chatapp --region us-east-2 --query "cluster.identity.oidc.issuer" --output text
+https://oidc.eks.us-east-2.amazonaws.com/id/9E0D8B4AE61B8E0AFF048E997B578DF3
+
+ubuntu@ip-172-31-7-129:~$ vi cluster-autoscaler-policy.json
+ubuntu@ip-172-31-7-129:~$ aws iam create-policy \
+>     --policy-name AmazonEKSClusterAutoscalerPolicy \
+>     --policy-document file://cluster-autoscaler-policy.json
+{
+    "Policy": {
+        "PolicyName": "AmazonEKSClusterAutoscalerPolicy",
+        "PolicyId": "ANPATLITCVFWU3PX32EMD",
+        "Arn": "arn:aws:iam::230357641581:policy/AmazonEKSClusterAutoscalerPolicy",
+        "Path": "/",
+        "DefaultVersionId": "v1",
+        "AttachmentCount": 0,
+        "PermissionsBoundaryUsageCount": 0,
+        "IsAttachable": true,
+        "CreateDate": "2021-10-05T03:09:29Z",
+        "UpdateDate": "2021-10-05T03:09:29Z"
+    }
+}
+
+ubuntu@ip-172-31-7-129:~$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+serviceaccount/cluster-autoscaler created
+clusterrole.rbac.authorization.k8s.io/cluster-autoscaler created
+role.rbac.authorization.k8s.io/cluster-autoscaler created
+clusterrolebinding.rbac.authorization.k8s.io/cluster-autoscaler created
+rolebinding.rbac.authorization.k8s.io/cluster-autoscaler created
+deployment.apps/cluster-autoscaler created
+
+ubuntu@ip-172-31-7-129:~$ kubectl annotate serviceaccount cluster-autoscaler \
+>   -n kube-system \
+>   eks.amazonaws.com/role-arn=arn:aws:iam::230357641581:role/AmazonEKSClusterAutoscalerRole
+serviceaccount/cluster-autoscaler annotated
+
+ubuntu@ip-172-31-7-129:~$ kubectl patch deployment cluster-autoscaler \
+>   -n kube-system \
+>   -p '{"spec":{"template":{"metadata":{"annotations":{"cluster-autoscaler.kubernetes.io/safe-to-evict": "false"}}}}}'
+deployment.apps/cluster-autoscaler patched
+
+ubuntu@ip-172-31-7-129:~$ kubectl -n kube-system edit deployment.apps/cluster-autoscaler
+deployment.apps/cluster-autoscaler edited
+- --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/chatapp
+        - --balance-similar-node-groups
+        - --skip-nodes-with-system-pods=false
+
+ubuntu@ip-172-31-7-129:~$ kubectl set image deployment cluster-autoscaler \
+>   -n kube-system \
+>   cluster-autoscaler=k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.1
+deployment.apps/cluster-autoscaler image updated
+
+kubectl -n kube-system logs -f deployment.apps/cluster-autoscaler
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+HPA - Metric Server
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl get deployment metrics-server -n kube-system
+
+watch kubectl get pod -A
+kubectl top nodes
+
+test
+kubectl run -it --rm load-generator --image=busybox /bin/sh --generator=run-pod/v1
+while true; do wget -q -O- http://nginx; done
+
+
+home = os.environ['HOME']
+ktritesh/frontend:latest
+env:
+    - name: dbhost
+   -value:   "mydatabase-endpoint"
+
+database:   os.env(${dbhost}. default)
+how to read environment in Python using os.env
+/new_chatapplication/fundoo/fundoo
+
+ env:
+            -
+              name: NAME
+              value: "chatapp"
+            -
+              name: USER
+              value: "admin"
+            -
+              name: PASSWORD
+              value: "admin123"
+            -
+              name: HOST
+              value: "mysql"
+            -
+              name: PORT
+              value: "3306"
+
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  labels:
+    app: mysql
+    tier: mysql
+data:
+  NAME: chatapp
+  USER: admin
+  PASSWORD: admin123
+  HOST: mysql
+  PORT: 3306
+
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+ ./get_helm.sh
+helm version
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+helm install nginx-ingress ingress-nginx/ingress-nginx --set controller.publishService.enabled=true
+
+nginx-ingress
